@@ -15,7 +15,7 @@ CREATE TABLE tmg_prices (
   PRIMARY KEY (epoch)
 );
 ```
-* Edit file named `.config.php` with your own configuration.
+* Create a file named `.config.php` with your own configuration. Use the `.config.php.template` for convenience.
 * Run manually the `.update.php`. First time it takes a while to get all values. Best way if you have a signum localhost, but remember database trim must be disabled (it is enabled by default).
 * Add a cron job to run every 5 minutes to update the database, running the `.update.php` file. This will keep track of new records.
 * Inspect regularly the `update.log` file checking for errors.
