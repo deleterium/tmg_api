@@ -28,5 +28,8 @@ Returns the latest price from the liquidity pool.
 ### getPrices
 Returns an array of all prices between `start` and `end` timestamps. Timestamps are unix epoch time. `start` must be supplied. `end` is optional and, if not given, will be last available.
 
+### getDailyOHLC
+Returns an array of all prices between `start` and last available, grouped by day and with open-high-low-close (OHLC) prices. Array is formatted to use with Highcharts chart library. Array indexes are 0) JS timestamp, 1) Open price, 2) High price, 3) Low price and 4) Close price. `start` timestamp is unix epoch time. `start` must be supplied, although it can be zero.
+
 ## Testing the API
 A simple API page is served for manual lookups at https://deleterium.info/tmg_api
