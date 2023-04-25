@@ -28,6 +28,7 @@ $conn = new mysqli($servername, $username, $password, $dbname);
 
 // Check connection
 if ($conn->connect_error) {
+    echo '{ "errorCode": -1, "errorDescription": "Internal API error." }';
     die("Connection failed: " . $conn->connect_error);
 }
 
@@ -66,8 +67,8 @@ if ($result->num_rows > 0) {
     // Encode the array as a JSON object and return it
     echo json_encode($prices);
 } else {
-    // If there is no result, return an empty JSON object
-    echo '{}';
+    // If there is no result, return an empty JSON array
+    echo '[]';
 }
 
 // Close the database connection
