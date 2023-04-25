@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TMG price API for liquidity pool</title>
+    <style>
+        iframe {
+            width: calc(100% - 2ch);
+            margin: 1ch;
+        }
+        label {
+            font-family: 'Courier New', Courier, monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="operation" id="getLatestPrice">
+        <h2>Get latest price</h2>
+        <div style="padding: 8px 0;"> 
+            <span>./getLatestPrice/</span>
+        </div>
+        <div class="descriptiopn">
+            <p>Returns the latest price from the liquidity pool.</p>
+        </div>
+        <div class="form-container">
+            <form action="getLatestPrice/" method="GET" target="formResponseGetLatestPrice">
+                <input type="submit" class="btn btn-default" value="Submit">
+            </form>
+        </div>
+        <iframe src="about:blank" name="formResponseGetLatestPrice" title="Request response"></iframe>
+    </div>
+    <div class="operation" id="getPrices">
+        <h2>Get prices</h2>
+        <div style="padding: 8px 0;"> 
+            <span>./getPrices/</span>
+        </div>
+        <div class="descriptiopn">
+            <p>Returns an array of all prices between `start` and `end` timestamps. Timestamps are unix epoch time. `start` must be supplied. `end` is optional and, if not given, will be last available.</p>
+        </div>
+        <div class="form-container">
+            <form action="getPrices" method="GET" target="formResponseGetPrices">
+                <label>start <input type="text" name="start"></label><br>
+                <label>end&nbsp;&nbsp; <input type="text" name="end"></label><br>
+                <input type="submit" class="btn btn-default" value="Submit">
+            </form>
+        </div>
+        <iframe src="about:blank" name="formResponseGetPrices" title="Request response"></iframe>
+    </div>
+</body>
+</html>
