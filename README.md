@@ -12,6 +12,7 @@ CREATE TABLE tmg_prices (
   epoch INT(11) NOT NULL,
   price DECIMAL(18,8) NOT NULL,
   blockheight INT(11) NOT NULL,
+  volume DECIMAL(18,8) NOT NULL,
   PRIMARY KEY (epoch)
 );
 ```

@@ -36,10 +36,34 @@ function getPriceFromMachineData($dataStream)
     return ($signaTotal / 1e6) / $assetTotal;
 }
 
+function getCummulativeVolume($dataStream)
+{
+    if (strlen($dataStream) < 22*16) {
+        return null;
+    }
+    return hexToDecimal(substr($dataStream, 21*16, 16)) / 1e8;
+}
+
 function mylog($text)
 {
     echo "$text\n";
     error_log(date("[Y-m-d H:i:s]") ."\t". $text ."\n", 3, dirname(__FILE__) ."/update.log");
+}
+
+function getValuesFromQuery($query) {
+    if ($query === null || !empty($query["errorCode"])) {
+        mylog('Failed to get contract latest details.');
+        exit(1);
+    }
+    $epoch = getEpochFromBlock($query["nextBlock"]);
+    $price = getPriceFromMachineData($query["machineData"]);
+    $blockheight = $query["nextBlock"];
+    $volume = getCummulativeVolume($query["machineData"]);
+    if ($price === null || $blockheight === null || $epoch === null || $volume === null) {
+        mylog("Error parsing values.");
+        exit(1);
+    }
+    return compact("epoch", "price", "blockheight", "volume");
 }
 
 // Connect to the database
@@ -49,45 +73,35 @@ if ($conn->connect_error) {
     mylog("Connection failed: " . $conn->connect_error);
     exit(1);
 }
-$sql = "SELECT MAX(blockheight) FROM tmg_prices";
-// Execute the query to get the latest price
-$result = $conn->query($sql);
-// Get the latest price row as an associative array
-$row = $result->fetch_assoc();
 
-if ($row["MAX(blockheight)"] == null) {
-    // Empty database
-    $latestInDB = 0;
-} else {
-    $latestInDB = $row["MAX(blockheight)"];
+// loop initial setup
+$result = $conn->query("SELECT * FROM tmg_prices ORDER BY epoch DESC LIMIT 1");
+$latestInDB = $result->fetch_assoc();
+if ($latestInDB == null) {
+    // Database is empty
+    $latestInDB = [
+        "epoch" => 0,
+        "price" => 0,
+        "blockheight" => 0,
+        "volume" => 0
+    ];
 }
-
+$prevValues = $latestInDB;
 $queryResult = file_get_contents($signumNode."/burst?requestType=getAT&at=".$contractId."&includeDetails=true");
 $decodedQuery = json_decode($queryResult, true);
-if (!empty($decodedQuery["errorCode"])) {
-    mylog('Failed to get contract latest details.');
-    exit(1);
-}
+$currValues = getValuesFromQuery($decodedQuery);
 
-$sql = "INSERT INTO tmg_prices (epoch, price, blockheight) VALUES (?, ?, ?)";
-
-while ($latestInDB < $decodedQuery["nextBlock"]) {
-    $price = getPriceFromMachineData($decodedQuery["machineData"]);
-    $blockheight = $decodedQuery["nextBlock"];
-    $epoch = getEpochFromBlock($blockheight);
-
-    if ($price < 0) {
-        // End gracefully if liquity pool was empty at that block
-        break;
-    }
-    if ($price === null || $blockheight === null || $epoch === null) {
-        mylog("Error parsing price.");
-        exit(1);
-    }
-
-    // Prepare the query statement
-    $stmt = $conn->prepare($sql);
-    $stmt->bind_param('idi', $epoch, $price, $blockheight);
+// loop condition
+while ($currValues["volume"] > $latestInDB["volume"]) {
+    // Insert current value
+    $stmt = $conn->prepare("INSERT INTO tmg_prices (epoch, price, blockheight, volume) VALUES (?, ?, ?, ?)");
+    $stmt->bind_param(
+        'idid',
+        $currValues["epoch"],
+        $currValues["price"],
+        $currValues["blockheight"],
+        $currValues["volume"]
+    );
     // Execute the query
     $stmt->execute();
     // Check if the query was successful
@@ -97,19 +111,35 @@ while ($latestInDB < $decodedQuery["nextBlock"]) {
         exit(1);
     }
     $stmt->close();
+    mylog("Added blockheight ". $currValues["blockheight"] ." with price ". $currValues["price"]);
+    if ($currValues["volume"] == $prevValues["volume"]) {
+        // previous operation (we are going backwards!) was not sell/buy. Remove from DB.
+        $stmt = $conn->prepare('DELETE FROM tmg_prices WHERE epoch=?');
+        $stmt->bind_param('i', $prevValues["epoch"]);
+        // Execute the query
+        $stmt->execute();
+        // Check if the query was successful
+        if ($stmt->affected_rows == 0) {
+            // If the query failed, return an error message
+            mylog("Error removing price at height ". $prevValues["blockheight"] ." ". $stmt->error);
+            exit(1);
+        }
+        $stmt->close();
+        mylog("Removed unwanted record at height ". $prevValues["blockheight"]);
+    }
 
-    mylog("Added blockheight $blockheight with price $price");
-
-    // Get next values
-    $blockheight--;
+    // loop prepare next iteration
+    $prevValues = $currValues;
     $queryResult = file_get_contents(
-        $signumNode ."/burst?requestType=getATDetails&at=". $contractId. "&height=". $blockheight
+        $signumNode ."/burst?requestType=getATDetails&at=". $contractId. "&height=". ($currValues["blockheight"] - 1)
     );
     $decodedQuery = json_decode($queryResult, true);
-    if (!empty($decodedQuery["errorCode"])) {
-        mylog("Failed to get contract details at height ". $blockheight);
-        exit(1);
-    }
+    $currValues = getValuesFromQuery($decodedQuery);
+}
+
+if ($latestInDB["volume"] == 0) {
+    // End gracefully if database was empty
+    mylog("Sync ended gracefully at blockheight=". $prevValues["blockheight"] ." and epoch=". $prevValues["epoch"]);
 }
 
 // Close the database connection
