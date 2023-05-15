@@ -64,8 +64,8 @@ if ($result->num_rows > 0) {
     // Loop through the result set and add the price data to the array
     $first = true;
     while ($row = $result->fetch_assoc()) {
-        $dateObj = date_create_immutable_from_format("Y-m-d", $row["date"]);
-        $currentDay = date_timestamp_get($dateObj); //->getTimestamp();
+        $dateObj = DateTimeImmutable::createFromFormat("!Y-m-d", $row["date"]);
+        $currentDay = $dateObj->getTimestamp();
         if ($first) {
             $prices[] = array(
                 intval($currentDay) * 1000,
