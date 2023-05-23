@@ -8,6 +8,8 @@ $dbname = "databaseName";
 
 // Contract details
 $contractId = "7071860869716171474";
+$firstTradeEpoch = 1661784628;
+$firstTradePrice = 200.0;
 
 // Selected node to fetch info
 $signumNode = "https://brazil.signum.network";

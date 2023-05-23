@@ -1,7 +1,7 @@
 <?php
 
 // Read the database credentials from the external file
-include_once '../.config.php';
+include_once( dirname(__FILE__) . '/../.config.php');
 
 // From a mixed var, return an integer value if it is integer.
 // Return null if not.
@@ -50,26 +50,14 @@ $stmt->execute();
 // Get the result set
 $result = $stmt->get_result();
 
-// Check if there is a result
-if ($result->num_rows > 0) {
-    // Create an array to store the price data
-    $prices = array();
-    
-    // Loop through the result set and add the price data to the array
-    while ($row = $result->fetch_assoc()) {
-        $prices[] = array(
-            'epoch' => $row['epoch'],
-            'price' => $row['price'],
-            'blockheight' => $row['blockheight']
-        );
-    }
-    
-    // Encode the array as a JSON object and return it
-    echo json_encode($prices);
-} else {
-    // If there is no result, return an empty JSON array
-    echo '[]';
+// Loop through the result set and add the price data to the array
+$prices = array();
+while ($row = $result->fetch_assoc()) {
+    $prices[] = $row;
 }
+
+// Encode the array as a JSON object and return it
+echo json_encode($prices);
 
 // Close the database connection
 $stmt->close();
