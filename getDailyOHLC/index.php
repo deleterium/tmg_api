@@ -2,22 +2,7 @@
 
 // Read the database credentials from the external file
 include_once( dirname(__FILE__) . '/../.config.php');
-
-// From a mixed var, return an integer value if it is integer.
-// Return null if not.
-function retInt($s)
-{
-    if (preg_match('/^\d{1,11}$/', $s)) {
-        return intval($s);
-    }
-    return null;
-}
-
-// Format a float value to a fixed decimals, returning it as a float
-function floatFormat($value, $decimals)
-{
-    return floatval(number_format($value, $decimals, ".", ""));
-}
+include_once( dirname(__FILE__) . '/../.libs.php');
 
 // Get the start and end timestamps from the GET variables
 $start = retInt($_GET['start']);
