@@ -31,6 +31,23 @@
         </div>
         <iframe src="about:blank" name="formResponseGetLatestPrice" title="Request response"></iframe>
     </div>
+    <div class="operation" id="getPriceAt">
+        <h2>Get price at</h2>
+        <div style="padding: 8px 0;"> 
+            <span>./getPriceAt/</span>
+        </div>
+        <div class="descriptiopn">
+            <p>Returns the price from the liquidity pool at a given epoch or blockheight.</p>
+        </div>
+        <div class="form-container">
+            <form action="getPriceAt/" method="GET" target="formResponseGetPriceAt">
+                <label>epoch&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <input type="text" name="epoch"></label><br>
+                <label>blockheight <input type="text" name="blockheight"></label><br>
+                <input type="submit" class="btn btn-default" value="Submit">
+            </form>
+        </div>
+        <iframe src="about:blank" name="formResponseGetPriceAt" title="Request response"></iframe>
+    </div>
     <div class="operation" id="getPrices">
         <h2>Get prices</h2>
         <div style="padding: 8px 0;"> 

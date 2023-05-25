@@ -26,6 +26,9 @@ CREATE TABLE tmg_prices (
 ### getLatestPrice
 Returns the latest price from the liquidity pool.
 
+### getPriceAt
+Returns the price from the liquidity pool at a given epoch or blockheight.
+
 ### getPrices
 Returns an array of all prices between `start` and `end` timestamps. Timestamps are unix epoch time. `start` must be supplied. `end` is optional and, if not given, will be last available.
 
@@ -33,4 +36,4 @@ Returns an array of all prices between `start` and `end` timestamps. Timestamps 
 Returns an array of all prices between `start` and last available, grouped by day and with open-high-low-close (OHLC) prices. Array is formatted to use with Highcharts chart library. Array indexes are 0) JS timestamp, 1) Open price, 2) High price, 3) Low price, 4) Close price and 5) Daily volume. `start` timestamp is unix epoch time. `start` must be supplied, although it can be zero.
 
 ## Testing the API
-A simple API page is served for manual lookups at https://deleterium.info/tmg_api
+A simple API page is served for manual lookups at https://deleterium.info/tmg_api_2
