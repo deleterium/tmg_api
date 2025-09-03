@@ -25,7 +25,28 @@ if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 
-// Define the query to get the prices between the start and end timestamps
+// First, find the most recent record before the start date to get proper lastClose/lastVolume
+$previousSql = "SELECT price as close, volume 
+                FROM tmg_prices 
+                WHERE epoch < ? 
+                ORDER BY epoch DESC 
+                LIMIT 1";
+$previousStmt = $conn->prepare($previousSql);
+$previousStmt->bind_param('i', $start);
+$previousStmt->execute();
+$previousResult = $previousStmt->get_result();
+
+if ($previousRow = $previousResult->fetch_assoc()) {
+    $lastClose = $previousRow['close'];
+    $lastVolume = $previousRow['volume'];
+} else {
+    // Fallback if no previous records exist
+    $lastClose = $firstTradePrice;
+    $lastVolume = 0;
+}
+$previousStmt->close();
+
+// Define the query to get the prices from the start timestamp onwards
 $sql = "SELECT
     DATE_FORMAT(FROM_UNIXTIME(epoch), '%Y-%m-%d') AS date,
     MIN(price) AS low,
@@ -39,47 +60,36 @@ WHERE
 GROUP BY
     date";
 $stmt = $conn->prepare($sql);
-
-// Rewind one day to get correct opening price
-$start -= 86400;
 $stmt->bind_param('i', $start);
 $stmt->execute();
-// Restore the right start date
-$start += 86400;
 
 // Get the result set
 $result = $stmt->get_result();
 
 // Create an array to store the price data
 $prices = array();
-// Only used if start is before first trade.
-$lastClose = $firstTradePrice;
-$lastVolume = 0;
+$currentDay = null;
 
 // Loop through the result set and add the price data to the array
 while ($row = $result->fetch_assoc()) {
     $dateObj = DateTimeImmutable::createFromFormat("!Y-m-d", $row["date"]);
     $currentDay = $dateObj->getTimestamp();
-    if ($currentDay <= $start - 86400) {
-        // Update last values before the requested start
-        $lastClose = $row['close'];
-        $lastVolume = $row['volume'];
-        continue;
-    }
     $prices[] = array(
         intval($currentDay) * 1000,
-        floatFormat($lastClose, 4),
+        floatFormat($lastClose, 4), // open = previous close
         $lastClose > $row['high'] ? floatFormat($lastClose, 4) : floatFormat($row['high'], 4),
         $lastClose < $row['low'] ? floatFormat($lastClose, 4) : floatFormat($row['low'], 4),
         floatFormat($row['close'], 4),
         floatFormat($row['volume'] - $lastVolume, 2)
     );
+    
     $lastClose = $row['close'];
     $lastVolume = $row['volume'];
 }
 
+// Fill in any missing days after the last available data
 if ($currentDay) {
-    $currentDay += 86400;
+    $currentDay += 86400; // Move to next day
     $lastPrice = floatFormat($lastClose, 4);
     while ($currentDay < time()) {
         // Fill data because there was no trade since some days ago
